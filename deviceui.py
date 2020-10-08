@@ -1,4 +1,7 @@
-from adb.client import Client as AdbClient
+try:
+	from ppadb.client import Client as AdbClient
+except:
+	from adb.client import Client as AdbClient
 import sys
 from random import randint
 import datetime
@@ -29,9 +32,9 @@ class Device:
 		
 		self.Pt = Pt
 
-	def Printhis(self,**kwargs):
+	def Printhis(self,message,color='default',**kwargs):
 		if self.Pt is not None:
-			self.Pt(**kwargs)
+			self.Pt(message,color,**kwargs)
 
 	#################################################
 	# GETTING DATA FROM DEVICE                      #################################################################################################################################
@@ -297,7 +300,7 @@ class Device:
 		""" mustexist takes lists """
 		pagecheckererror = 1
 		while True:
-			# print(f"Waiting for page to load")
+			self.Printhis(f"Waiting for page to load",'vanish')
 			pdata = self.GetData(check=False)
 			for words in mustexist:
 				if ui == "text":
@@ -356,11 +359,11 @@ class Device:
 	def SwipeScreen(self,method,times=1):
 		if method == "scrolldown":
 			for _ in range(times):
-				self.Printhis(message=f"Scrolling Down",color="vanish")
+				self.Printhis(message=f"Scrolling Down          ",color="vanish")
 				self.device.input_swipe(randint(197, 428), randint(748, 763), randint(197, 428), randint(548, 563), 500)	
 		elif method == "scrollup":
 			for _ in range(times):
-				self.Printhis(message=f"Scrolling Up",color="vanish")
+				self.Printhis(message=f"Scrolling Up          ",color="vanish")
 				self.device.input_swipe(randint(197, 428), randint(548, 563), randint(197, 428), randint(748, 763), 500)
 		else:
 			start_x, start_y, end_x, end_y = method

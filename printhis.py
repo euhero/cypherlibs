@@ -12,14 +12,16 @@ class Printhis:
 
 	def log(self,message,color='default',vanishlog=False):
 
+		message = message + ' ' * 20
+
 		if color == 'default':
-			print(f'[{datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")}]\t: {message.ljust(20)}')
+			print(f'[{datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")}]\t: {message}')
 		if color == 'green':
-			print(Fore.GREEN + Back.RESET + '[' + datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S") + ']\t: ' + message.ljust(20))
+			print(Fore.GREEN + Back.RESET + '[' + datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S") + ']\t: ' + message)
 		if color == 'red':
-			print(Fore.RED + '[' + datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S") + ']\t: ' + message.ljust(20))
+			print(Fore.RED + '[' + datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S") + ']\t: ' + message)
 		if color == 'yellow':
-			print(Fore.YELLOW + '[' + datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S") + ']\t: ' + message.ljust(20))
+			print(Fore.YELLOW + '[' + datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S") + ']\t: ' + message)
 
 		if color == 'log':
 			pass

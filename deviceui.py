@@ -298,9 +298,9 @@ class Device:
 
 	def PageLoadCheck(self,mustexist,ui="text",shouldcontinue=False,retry=60):
 		""" mustexist takes lists """
-		pagecheckererror = 1
+		pagecheckererror = 0
 		while True:
-			self.Printhis(f"Waiting for page to load",'vanish')
+			self.Printhis(f"Waiting for page to load" + '.' * pagecheckererror,'vanish')
 			pdata = self.GetData(check=False)
 			for words in mustexist:
 				if ui == "text":
@@ -358,12 +358,12 @@ class Device:
 
 	def SwipeScreen(self,method,times=1):
 		if method == "scrolldown":
-			for _ in range(times):
-				self.Printhis(message=f"Scrolling Down          ",color="vanish")
+			for i in range(times):
+				self.Printhis(message=f"Scrolling Down" + '.' * i +"                                  ",color="vanish")
 				self.device.input_swipe(randint(197, 428), randint(748, 763), randint(197, 428), randint(548, 563), 500)	
 		elif method == "scrollup":
-			for _ in range(times):
-				self.Printhis(message=f"Scrolling Up          ",color="vanish")
+			for i in range(times):
+				self.Printhis(message=f"Scrolling Up" + '.' * i +"                                  ",color="vanish")
 				self.device.input_swipe(randint(197, 428), randint(548, 563), randint(197, 428), randint(748, 763), 500)
 		else:
 			start_x, start_y, end_x, end_y = method

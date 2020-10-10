@@ -2,6 +2,7 @@ try:
 	from ppadb.client import Client as AdbClient
 except:
 	from adb.client import Client as AdbClient
+
 import sys
 from random import randint
 import datetime
@@ -17,11 +18,15 @@ class Device:
 		apps = {
 			"instagram" : "com.instagram.android/com.instagram.android.activity.MainTabActivity",
 			"tiktok" : "com.ss.android.ugc.trill/com.ss.android.ugc.aweme.splash.SplashActivity",
-			"linkedin" : "com.linkedin.android.salesnavigator/com.linkedin.android.salesnavigator.ui.home.HomeV2Activity"
+			"linkedin" : "com.linkedin.android.salesnavigator/com.linkedin.android.salesnavigator.ui.home.HomeV2Activity",
+			"twitter" : "com.twitter.android/com.twitter.android.StartActivity"
 		}
 
-		self.app = apps[app]
-		self.mainapp_name = apps[app].split('/')[0]
+		try:
+			self.app = apps[app]
+		except KeyError:
+			self.app = app
+		self.mainapp_name = self.app.split('/')[0]
 
 		client = AdbClient(host="127.0.0.1", port=5037)
 		self.device = client.device(deviceid)
@@ -296,11 +301,11 @@ class Device:
 	# PAGE LOAD CHECKS #####################
 	####################
 
-	def PageLoadCheck(self,mustexist,ui="text",shouldcontinue=False,retry=60):
+	def PageLoadCheck(self,mustexist,ui="text",shouldcontinue=False,retry=60,message='Waiting for page to load'):
 		""" mustexist takes lists """
 		pagecheckererror = 0
 		while True:
-			self.Printhis(f"Waiting for page to load" + '.' * pagecheckererror,'vanish')
+			self.Printhis(f"{message}" + '.' * pagecheckererror,'vanish')
 			pdata = self.GetData(check=False)
 			for words in mustexist:
 				if ui == "text":

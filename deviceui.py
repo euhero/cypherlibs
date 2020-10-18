@@ -10,10 +10,13 @@ import time
 import re
 import os
 from bs4 import BeautifulSoup
+import subprocess
 
 
 class Device:
 	def __init__(self,deviceid,app="instagram",wirelessip=None,Pt=None):
+
+		subprocess.call('adb devices',shell=True,stdout=subprocess.PIPE)
 
 		apps = {
 			"instagram" : "com.instagram.android/com.instagram.android.activity.MainTabActivity",
@@ -32,10 +35,16 @@ class Device:
 		self.device = client.device(deviceid)
 		self.deviceid = deviceid
 
+
+
 		if not os.path.isdir(deviceid):
 			os.mkdir(deviceid)
 		
 		self.Pt = Pt
+
+		if deviceid not in subprocess.getoutput('adb devices'):
+			self.Printhis(f'Device ID is not plugged in : {deviceid}','red')
+			sys.exit(0)
 
 	def Printhis(self,message,color='default',**kwargs):
 		if self.Pt is not None:
@@ -49,11 +58,11 @@ class Device:
 		check_dumpdata_try = 0 # Variable use to check how many times DumpData has tried
 		idleerror = 0
 		while True:
-			if idleerror == 20:
+			if idleerror == 30:
 				self.Printhis(message="Please Try Restarting your device before continuing",color="red")
 				return False
 			devicexml = self.device.shell("uiautomator dump", timeout=60)
-			if check_dumpdata_try == 5:
+			if check_dumpdata_try == 30:
 				self.Printhis(message="Failed to get page data. Skipping Action",color="log")
 				return False
 			if "ERROR" in devicexml:
@@ -114,6 +123,9 @@ class Device:
 
 	def Resourceid(self,id, hold=False, sec=5000, check=False, checkandclick=False, sleep=0.5, data='None',margin=(0,0,0,0)):
 
+		if isinstance(margin,int):
+			margin = [margin for _ in range(4)]
+
 		if data == 'None':
 			data = self.GetData()
 			time.sleep(sleep)
@@ -154,6 +166,9 @@ class Device:
 	###########
 
 	def Textid(self,id, hold=False, sec=5000, check=False, checkandclick=False, resourceid='None', sleep=0.5, data='None',margin=(0,0,0,0)):
+
+		if isinstance(margin,int):
+			margin = [margin for _ in range(4)]
 		
 		if data == 'None':
 			data = self.GetData()
@@ -209,6 +224,9 @@ class Device:
 	##############
 
 	def Contentid(self,id, hold=False, sec=5000, check=False, checkandclick=False, resourceid='None', sleep=0.5, data='None', margin=(0,0,0,0)):
+
+		if isinstance(margin,int):
+			margin = [margin for _ in range(4)]
 		
 		resourceid = resourceid
 		if data == 'None':
@@ -301,21 +319,23 @@ class Device:
 	# PAGE LOAD CHECKS #####################
 	####################
 
-	def PageLoadCheck(self,mustexist,ui="text",shouldcontinue=False,retry=60,message='Waiting for page to load'):
+	def PageLoadCheck(self,mustexist,ui="text",shouldcontinue=False,retry=60,data=None,message='Waiting for page to load'):
 		""" mustexist takes lists """
 		pagecheckererror = 0
+		if data is None:
+			data = self.GetData(check=False)
 		while True:
 			self.Printhis(f"{message}" + '.' * pagecheckererror,'vanish')
-			pdata = self.GetData(check=False)
+			
 			for words in mustexist:
 				if ui == "text":
-					if self.Textid(words,check=True,data=pdata) is True:
+					if self.Textid(words,check=True,data=data) is True:
 						return True
 				if ui == "resource-id":
-					if self.Resourceid(words,check=True,data=pdata) is True:
+					if self.Resourceid(words,check=True,data=data) is True:
 						return True
 				if ui == "content-desc":
-					if self.Contentid(words,check=True,data=pdata) is True:
+					if self.Contentid(words,check=True,data=data) is True:
 						return True
 			if pagecheckererror == retry:
 				if shouldcontinue is False:
@@ -325,6 +345,7 @@ class Device:
 					sys.exit(0)
 				if shouldcontinue is True:
 					return False
+			data = self.GetData(check=False)
 			pagecheckererror += 1
 			time.sleep(1)
 

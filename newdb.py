@@ -8,12 +8,12 @@ import datetime
 class MyDb:
 	def __init__(self,db,db_location,Base):
 
-		engine = create_engine(f'sqlite:///{db_location}')
+		self.engine = create_engine(f'sqlite:///{db_location}')
 
 		# Create database if it doesn't exist
-		Base.metadata.create_all(bind=engine)
+		Base.metadata.create_all(bind=self.engine)
 
-		Session = sessionmaker(bind=engine)
+		Session = sessionmaker(bind=self.engine)
 
 		self.session = Session()
 		self.db = db
@@ -42,7 +42,9 @@ class MyDb:
 			return False
 
 	def Query(self):
-		return self.session.query(self.db)
+		result = self.session.query(self.db)
+		return result
+
 
 
 

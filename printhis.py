@@ -15,7 +15,7 @@ class Printhis:
 		message = message + ' ' * 20
 
 		if color == 'default':
-			print(f'[{datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")}]\t: {message}')
+			print(Fore.WHITE + Back.RESET + '[' + datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S") + ']\t: ' + message)
 		if color == 'green':
 			print(Fore.GREEN + Back.RESET + '[' + datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S") + ']\t: ' + message)
 		if color == 'red':

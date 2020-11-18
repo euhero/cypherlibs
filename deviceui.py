@@ -2,7 +2,6 @@ try:
 	from ppadb.client import Client as AdbClient
 except:
 	from adb.client import Client as AdbClient
-
 import sys
 from random import randint
 import datetime
@@ -35,12 +34,13 @@ class Device:
 		self.device = client.device(deviceid)
 		self.deviceid = deviceid
 
-
+		# self.GetData = self.MainGetData
 
 		if not os.path.isdir(deviceid):
 			os.mkdir(deviceid)
-		
+
 		self.Pt = Pt
+		self.GetDataFilter = None
 
 		if deviceid not in subprocess.getoutput('adb devices'):
 			self.Printhis(f'Device ID is not plugged in : {deviceid}','red')
@@ -87,6 +87,12 @@ class Device:
 			self.device.pull('/sdcard/window_dump.xml', self.deviceid + '/data.xml')
 			with open(self.deviceid + '/data.xml', 'r', encoding="UTF-8") as data:
 				data = data.read().encode(encoding="UTF-8")
+			
+			self.Textid('DENY',data=data,check=True,checkandclick=True)
+
+			if callable(self.GetDataFilter):
+				self.GetDataFilter(data)
+
 			return data
 
 		data = 'None'
@@ -109,6 +115,11 @@ class Device:
 				sys.stdout.flush()
 				self.Printhis(message='Please check your network connection',color='red')
 				sys.exit(0)
+
+			self.Textid('DENY',data=data,check=True,checkandclick=True)
+
+			if callable(self.GetDataFilter):
+				self.GetDataFilter(data)
 
 		return data
 
@@ -227,7 +238,7 @@ class Device:
 
 		if isinstance(margin,int):
 			margin = [margin for _ in range(4)]
-		
+
 		resourceid = resourceid
 		if data == 'None':
 			data = self.GetData()
@@ -243,7 +254,6 @@ class Device:
 
 			self.device.input_tap(randint(int(minx), int(maxx)), randint(int(miny), int(maxy)))
 			return True
-
 
 		if check == True:
 			try:
@@ -276,6 +286,63 @@ class Device:
 		self.device.input_tap(randint(int(minx), int(maxx)), randint(int(miny), int(maxy)))
 		return True
 
+	##############
+	# CLASS ID #####################
+	##############
+
+	def Classid(self,id, hold=False, sec=5000, check=False, checkandclick=False, resourceid='None', sleep=0.5, data='None', margin=(0,0,0,0)):
+
+		if isinstance(margin,int):
+			margin = [margin for _ in range(4)]
+
+		resourceid = resourceid
+		if data == 'None':
+			data = self.GetData()
+			time.sleep(sleep)
+		if resourceid != 'None':
+			x = BeautifulSoup(data,"html.parser").find(attrs={"resource-id":re.compile(f'^{self.mainapp_name}:id/{resourceid}$',re.I),"class":re.compile(f'^{id}$',re.I)})['bounds'].strip('[').strip(']').replace('][',',').split(',')
+			minx, miny, maxx, maxy = x
+
+			minx = int(minx) + margin[0]
+			miny = int(miny) + margin[1]
+			maxx = int(maxx) - margin[2]
+			maxy = int(maxy) - margin[3]
+
+			self.device.input_tap(randint(int(minx), int(maxx)), randint(int(miny), int(maxy)))
+			return True
+
+		if check == True:
+			try:
+				x = BeautifulSoup(data,'html.parser').find(attrs={"class":re.compile(f'^{id}$',re.I)})['bounds'].strip('[').strip(']').replace('][',',').split(',')
+				minx, miny, maxx, maxy = x
+
+				minx = int(minx) + margin[0]
+				miny = int(miny) + margin[1]
+				maxx = int(maxx) - margin[2]
+				maxy = int(maxy) - margin[3]
+
+				if checkandclick is True:
+					self.device.input_tap(randint(int(minx), int(maxx)), randint(int(miny), int(maxy)))
+				return True
+			except TypeError:
+				return False
+
+		x = BeautifulSoup(data,'html.parser').find(attrs={"class":re.compile(f'^{id}$',re.I)})['bounds'].strip('[').strip(']').replace('][',',').split(',')
+		minx, miny, maxx, maxy = x
+
+		minx = int(minx) + margin[0]
+		miny = int(miny) + margin[1]
+		maxx = int(maxx) - margin[2]
+		maxy = int(maxy) - margin[3]
+
+		if hold == True:
+			self.device.input_swipe(randint(int(minx), int(maxx)), randint(int(miny), int(maxy)), randint(int(minx), int(maxx)),randint(int(miny), int(maxy)), sec)
+			return True
+
+		self.device.input_tap(randint(int(minx), int(maxx)), randint(int(miny), int(maxy)))
+		return True
+
+
 
 	######################################################
 	# MISC OF CONTROLS                                   #################################################################################################################################
@@ -286,8 +353,11 @@ class Device:
 	###############
 
 
-	def OpenApp(self):
-		self.device.shell(f"am start -n {self.app}")
+	def OpenApp(self,apptoopen=None):
+		if apptoopen is None:
+			self.device.shell(f"am start -n {self.app}")
+		else:
+			self.device.shell(f"am start -n {apptoopen}")
 
 	###############
 	# CLOSE APP #####################
@@ -300,8 +370,10 @@ class Device:
 	# OPEN VIA LINK #####################
 	#################
 
-	def OpenLink(self,link):
-		self.device.shell(f'am start -a "android.intent.action.VIEW" -d "{link}"')
+	def OpenLink(self,link,openapp=None):
+		if openapp is None:
+			openapp = self.mainapp_name
+		self.device.shell(f'am start -a "android.intent.action.VIEW" -d "{link}" {openapp}')
 
 	###########################
 	# WRITING TEXT WITH SPACE #####################
@@ -326,7 +398,7 @@ class Device:
 			data = self.GetData(check=False)
 		while True:
 			self.Printhis(f"{message}" + '.' * pagecheckererror,'vanish')
-			
+
 			for words in mustexist:
 				if ui == "text":
 					if self.Textid(words,check=True,data=data) is True:
@@ -382,14 +454,14 @@ class Device:
 	# SWIPE SCREEN #####################
 	################
 
-	def SwipeScreen(self,method,times=1):
+	def SwipeScreen(self,method,times=1,message="Scrolling feed"):
 		if method == "scrolldown":
 			for i in range(times):
-				self.Printhis(message=f"Scrolling Down" + '.' * i +"                                  ",color="vanish")
+				self.Printhis(message=message + '.' * i,color="vanish")
 				self.device.input_swipe(randint(197, 428), randint(748, 763), randint(197, 428), randint(548, 563), 500)	
 		elif method == "scrollup":
 			for i in range(times):
-				self.Printhis(message=f"Scrolling Up" + '.' * i +"                                  ",color="vanish")
+				self.Printhis(message=message + '.' * i,color="vanish")
 				self.device.input_swipe(randint(197, 428), randint(548, 563), randint(197, 428), randint(748, 763), 500)
 		else:
 			start_x, start_y, end_x, end_y = method
@@ -414,7 +486,11 @@ class Device:
 	#####################
 
 	def GetCurrentFocus(self):
-		return self.device.shell("dumpsys window windows | grep -E 'mCurrentFocus|mFocusedApp'")
+		result = self.device.shell("dumpsys window windows | grep -E 'mCurrentFocus|mFocusedApp|topApp'")
+		result = result.split('}')[0].split(' ')
+		for i in result:
+			if '/' in i:
+				return i
 
 	#############################
 	# CHECK INTERNET CONENCTION #####################
@@ -427,7 +503,6 @@ class Device:
 			Will return True if a connection is establish and
 			False if there's no internet or data connection
 		"""
-
 
 		ping_response = self.device.shell('ping -c 1 google.com')
 		if 'unknown host' in ping_response:
@@ -442,18 +517,15 @@ class Device:
 			Function will loop forever if connection is not establish so becareful
 		"""
 
-
 		while True:
 			if self.IsConnectedToInternet() is True:
 				return True
 			else:
 				# print('sleeping')
-
 				if retry is not None:
 					error =+ 1
 					if error == retry:
 						return False
-
 				time.sleep(10)
 
 		return True
@@ -519,7 +591,7 @@ class Device:
 	# GET ALL TEXT VIA RESOURCE ID #####################
 	################################
 
-	def GetAllText(self,id,data=None,include_bounds=False):
+	def GetAllText(self,id,ui='resource-id',data=None,include_bounds=False,bounds_only=False,source_only=False):
 
 		"""
 			Get all texts via resource id
@@ -528,9 +600,21 @@ class Device:
 		if data is None:
 			data = self.GetData()
 
-		soup = BeautifulSoup(data,"html.parser").find_all(attrs={"resource-id":re.compile(f'^{self.mainapp_name}:id/{id}$',re.I)})
+		if ui == 'resource-id':
+			soup = BeautifulSoup(data,"html.parser").find_all(attrs={"resource-id":re.compile(f'^{self.mainapp_name}:id/{id}$',re.I)})
+		elif ui == 'text':
+			soup = BeautifulSoup(data,"html.parser").find_all(attrs={"text":re.compile(f'^{id}$',re.I)})
+
+
+		if source_only is True:
+			return soup
 
 		results = []
+
+		if bounds_only is True:
+			for i in soup:
+				results.append( i['bounds'].strip('[').strip(']').replace('][',',').split(','))
+			return results
 
 		if include_bounds is True:
 			for i in soup:
@@ -561,20 +645,41 @@ class Device:
 		return results
 
 
-
-
-
-
-
-
-	
 if __name__ == "__main__":
-
-	instagram = Device('MNV9K19314903315')
-	results = instagram.GetScreenResolution()
-	
-	print(results)
+	pass
 
 
 
-	
+	# def GetData(**kwargs):
+
+	# 	data = ig.MainGetData(**kwargs)
+
+	# 	if "Action Blocked" in str(data):
+	# 		# ig.Print("Looks Like Action is Blocked", color="red")
+	# 		try:
+	# 			ig.Textid('Tell us', data=data)
+	# 		except:
+	# 			ig.Textid('OK',data=data)
+
+	# 	if ig.Textid("Try Again Later",check=True, data=data) is True:
+	# 		ig.Textid('Tell us',check=True,checkandclick=True, data=data)
+	# 		ig.Textid('OK',check=True,checkandclick=True,data=data)
+
+	# 	# if ig.Textid(f"You've been logged out of {current_account['account']}. The account owner may have changed the password.",check=True, data=data) is True:
+	# 	# 	ig.Snapshot(filename=f'Logged Out {current_account["account"]}')
+			
+	# 		# notificationdb.Add(deviceid=deviceid,account=current_account["account"],notification='Youve been Logged Out')
+	# 		# with open('notification.txt','a') as notification:
+	# 		# 	notification.writelines(f'{current_account["account"]}-{deviceid},Youve been Logged Out ({datetime.datetime.now().date()})\n')				
+	# 		ig.Textid('OK',check=True,checkandclick=True,data=data)
+	# 		sys.exit(0)
+
+	# 	return data
+
+
+	ig = Device('MNV9K19314903315')
+	ig.GetData()
+	# print(ig.GetCurrentFocus())
+
+
+

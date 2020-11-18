@@ -45,11 +45,52 @@ class MyDb:
 		result = self.session.query(self.db)
 		return result
 
+	def query(self,get,**filter_by):
+
+		results = self.Query().filter_by(**filter_by)
+
+		if get == 'first':
+			results =  results.first()
+
+			if results == None:
+				results = None
+			else:
+				results = vars(results)
+
+
+		elif get == 'all':
+			results =  results.all()
+
+			try:
+				results = [vars(i) for i in results]
+			except UnboundLocalError:
+				results = None
+
+		elif isinstance(get,int):
+			results = results.limit(get).all()
+
+			try:
+				results = [vars(i) for i in results]
+			except UnboundLocalError:
+				results = None
+		
+
+		self.SaveSession()
+		return results
+
+	def Update(self,query,update):
+		qresult = self.Query().filter_by(**query).first()
+		for keys in update.keys():
+			setattr(qresult,keys,update[keys])
+		self.SaveSession()
+		return True
 
 
 
 
 if __name__ == "__main__":
+
+	# Base =declarative_base()
 	pass
 	# class Notification_Db(Base):
 	# 	__tablename__ = 'notifications'
@@ -64,4 +105,8 @@ if __name__ == "__main__":
 
 
 
-	# NotificationDb = MyDb(Notification_Db,'notificationdatabase.db')
+	# NotificationDb = MyDb(Notification_Db,'notificationdatabase.db',Base)
+
+	# result = NotificationDb.Update({"deviceid" : "ertdrg"},{"account":"this should be here"})
+	# print(result)
+	# input()

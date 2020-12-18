@@ -1,14 +1,15 @@
-from sqlalchemy import create_engine, String, Integer, ForeignKey, Column
+from sqlalchemy import create_engine, String, Integer, ForeignKey, Column, or_, func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import datetime
+import random
 
 # Base = declarative_base()
 
 class MyDb:
 	def __init__(self,db,db_location,Base):
 
-		self.engine = create_engine(f'sqlite:///{db_location}')
+		self.engine = create_engine(f'sqlite:///{db_location}',connect_args={'timeout': 15})
 
 		# Create database if it doesn't exist
 		Base.metadata.create_all(bind=self.engine)
@@ -27,7 +28,8 @@ class MyDb:
 	def Add(self,unique=False,**data):
 		
 		if unique is True:
-			if self.Query().filter_by(**data).first() is not None:
+			if self.query('first',**data) is not None:
+				self.SaveSession()
 				return False
 		self.session.add(self.db(**data))
 		if self.SaveSession() is True:
@@ -39,6 +41,7 @@ class MyDb:
 			if self.SaveSession() is True:
 				return True
 		except:
+			self.SaveSession()
 			return False
 
 	def Query(self):
@@ -67,15 +70,18 @@ class MyDb:
 				results = None
 
 		elif isinstance(get,int):
-			results = results.limit(get).all()
+			results = results.order_by(func.random()).limit(get).all()
 
 			try:
 				results = [vars(i) for i in results]
+				# if get > len(results):
+				# 	get = len(results)
+				# results = random.sample(results,get)
 			except UnboundLocalError:
 				results = None
 		
-
 		self.SaveSession()
+		
 		return results
 
 	def Update(self,query,update):
@@ -83,6 +89,7 @@ class MyDb:
 		for keys in update.keys():
 			setattr(qresult,keys,update[keys])
 		self.SaveSession()
+		
 		return True
 
 
@@ -90,23 +97,11 @@ class MyDb:
 
 if __name__ == "__main__":
 
-	# Base =declarative_base()
+	# deviceid = 'MNV9K19314903315'
+	# account = 'gram.genius'
+
+	
+
+
+
 	pass
-	# class Notification_Db(Base):
-	# 	__tablename__ = 'notifications'
-
-	# 	rowid = Column('rowid',Integer,primary_key=True)
-	# 	deviceid = Column('deviceid',String)
-	# 	account = Column('account',String) 
-	# 	notification = Column('notification',String) 
-	# 	date = Column('date',String,default=str(datetime.datetime.now().date()) )
-	# 	time = Column('time',String,default=str(datetime.datetime.now().time())) 
-
-
-
-
-	# NotificationDb = MyDb(Notification_Db,'notificationdatabase.db',Base)
-
-	# result = NotificationDb.Update({"deviceid" : "ertdrg"},{"account":"this should be here"})
-	# print(result)
-	# input()

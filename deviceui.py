@@ -58,6 +58,8 @@ class Device:
 		check_dumpdata_try = 0 # Variable use to check how many times DumpData has tried
 		idleerror = 0
 		while True:
+			if idleerror % 5 == 0 and idleerror != 0:
+				self.SwipeScreen("scrollup",message='Trying to prevent idle error')
 			if idleerror == 30:
 				self.Printhis(message="Please Try Restarting your device before continuing",color="red")
 				return False
@@ -77,7 +79,7 @@ class Device:
 			else:
 				return True
 
-	def GetData(self,check=True,charlimit=8000):
+	def GetData(self,check=True,charlimit=8000,GetdataFilter=True):
 		
 		if check is False:
 			if self.DumpData() is False:
@@ -88,10 +90,10 @@ class Device:
 			with open(self.deviceid + '/data.xml', 'r', encoding="UTF-8") as data:
 				data = data.read().encode(encoding="UTF-8")
 			
-			self.Textid('DENY',data=data,check=True,checkandclick=True)
 
-			if callable(self.GetDataFilter):
-				self.GetDataFilter(data)
+			if GetdataFilter is True:
+				if callable(self.GetDataFilter):
+					self.GetDataFilter(data)
 
 			return data
 
@@ -116,10 +118,10 @@ class Device:
 				self.Printhis(message='Please check your network connection',color='red')
 				sys.exit(0)
 
-			self.Textid('DENY',data=data,check=True,checkandclick=True)
 
-			if callable(self.GetDataFilter):
-				self.GetDataFilter(data)
+			if GetdataFilter is True:
+				if callable(self.GetDataFilter):
+					self.GetDataFilter(data)
 
 		return data
 
@@ -380,34 +382,61 @@ class Device:
 	###########################
 
 	def WriteText(self,text):
-
+		text = text.replace('’',"'")
+		text = text.replace('\r\n','\n')
+		text = text.replace("\\n","\n")
 		text = text.replace("\\","\\\\")
 		text = text.replace("$","\$")
-		text = text.replace(" ","%s")
-		self.device.input_text(text)
+		text = text.split(" ")
+
+		word_storage = []
+		for n,word in enumerate(text,start=1):
+			# self.device.input_text(word)
+			# if n != len(text):
+			# 	self.device.input_text("%s")
+
+			word_storage.append(word)
+
+			if len(word_storage) >= 5:
+				self.device.input_text("%s".join(word_storage))
+				if n != len(text):
+					self.device.input_text("%s")
+				word_storage = []
+			
+		if len(word_storage) > 0:
+			self.device.input_text("%s".join(word_storage))
+
+
+			
+
 
 
 	####################
 	# PAGE LOAD CHECKS #####################
 	####################
 
-	def PageLoadCheck(self,mustexist,ui="text",shouldcontinue=False,retry=60,data=None,message='Waiting for page to load'):
+	def PageLoadCheck(self,mustexist,ui="text",shouldcontinue=False,retry=15,data=None,message='Waiting for page to load'):
 		""" mustexist takes lists """
 		pagecheckererror = 0
+		finish_message = lambda x : self.Printhis(f'{x}', 'vanishgreen')
 		if data is None:
 			data = self.GetData(check=False)
+		loading_animation = lambda x : 4 if x % 4 == 0 else 3 if x % 3 == 0 else 2 if x % 2 == 0 else 1
 		while True:
-			self.Printhis(f"{message}" + '.' * pagecheckererror,'vanish')
+			self.Printhis(f"{message}" + '.' * loading_animation(pagecheckererror + 1),'vanish')
 
 			for words in mustexist:
 				if ui == "text":
 					if self.Textid(words,check=True,data=data) is True:
+						finish_message(message)
 						return True
 				if ui == "resource-id":
 					if self.Resourceid(words,check=True,data=data) is True:
+						finish_message(message)
 						return True
 				if ui == "content-desc":
 					if self.Contentid(words,check=True,data=data) is True:
+						finish_message(message)
 						return True
 			if pagecheckererror == retry:
 				if shouldcontinue is False:
@@ -454,18 +483,38 @@ class Device:
 	# SWIPE SCREEN #####################
 	################
 
-	def SwipeScreen(self,method,times=1,message="Scrolling feed"):
+	def SwipeScreen(self,method,times=1,message="Scrolling feed",delay=None):
+
+		""" method :
+				scrolldown
+				scrollup
+			times :
+				default 1 """
+
 		if method == "scrolldown":
 			for i in range(times):
 				self.Printhis(message=message + '.' * i,color="vanish")
-				self.device.input_swipe(randint(197, 428), randint(748, 763), randint(197, 428), randint(548, 563), 500)	
+				self.device.input_swipe(randint(197, 428), randint(748, 763), randint(197, 428), randint(548, 563), 500)
+				if delay is not None:
+					for i in range(int(delay)):
+						self.Printhis(f"Sleeping {i+1}/{delay}","vanish")
+						time.sleep(1)
 		elif method == "scrollup":
 			for i in range(times):
 				self.Printhis(message=message + '.' * i,color="vanish")
 				self.device.input_swipe(randint(197, 428), randint(548, 563), randint(197, 428), randint(748, 763), 500)
+				if delay is not None:
+					for i in range(int(delay)):
+						self.Printhis(f"Sleeping {i+1}/{delay}","vanish")
+						time.sleep(1)
 		else:
 			start_x, start_y, end_x, end_y = method
-			self.device.input_swipe(start_x, start_y, end_x, end_y, 500)
+			for i in range(times):
+				self.device.input_swipe(start_x, start_y, end_x, end_y, 500)
+				if delay is not None:
+					for i in range(int(delay)):
+						self.Printhis(f"Sleeping {i+1}/{delay}","vanish")
+						time.sleep(1)
 
 	##################
 	# GET CURRENT UI #####################
@@ -605,7 +654,6 @@ class Device:
 		elif ui == 'text':
 			soup = BeautifulSoup(data,"html.parser").find_all(attrs={"text":re.compile(f'^{id}$',re.I)})
 
-
 		if source_only is True:
 			return soup
 
@@ -622,7 +670,7 @@ class Device:
 		else:
 			for i in soup:
 				results.append(i['text'])
-		
+
 		return results
 
 
@@ -641,8 +689,31 @@ class Device:
 
 	def GetScreenResolution(self):
 		results = [int(i) for i in self.device.shell('wm size').strip('Physical size: ').strip('\n').split('x')]
-
+		
 		return results
+
+	####################
+	# UI COMMON ACTION #####################
+	####################
+
+	def KeyEvent(self,action):
+		"""
+			Key Event for controlling phones
+		
+			Available action : 
+			back
+			home
+			menu
+
+
+		"""
+
+		if action == 'back':
+			self.device.input_keyevent('4')
+		elif action == 'hone':
+			self.device.input_keyevent('3')
+		elif action == 'menu':
+			self.device.input_keyevent('82')
 
 
 if __name__ == "__main__":

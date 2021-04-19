@@ -178,7 +178,7 @@ class Device:
 	# TEXT ID #####################
 	###########
 
-	def Textid(self,id, hold=False, sec=5000, check=False, checkandclick=False, resourceid='None', sleep=0.5, data='None',margin=(0,0,0,0)):
+	def Textid(self,id, hold=False, sec=5000, check=False, checkandclick=False, resourceid='None', sleep=0.5, data='None',margin=(0,0,0,0), get_coordinate=False):
 
 		if isinstance(margin,int):
 			margin = [margin for _ in range(4)]
@@ -217,6 +217,9 @@ class Device:
 
 		x = BeautifulSoup(data,'html.parser').find(attrs={"text":re.compile(f'^{id}$',re.I)})['bounds'].strip('[').strip(']').replace('][',',').split(',')
 		minx, miny, maxx, maxy = x
+
+		if get_coordinate is True:
+			return x
 
 		minx = int(minx) + margin[0]
 		miny = int(miny) + margin[1]
@@ -383,6 +386,7 @@ class Device:
 
 	def WriteText(self,text):
 		text = text.replace('’',"'")
+		text = text.replace('‘',"'")
 		text = text.replace('\r\n','\n')
 		text = text.replace("\\n","\n")
 		text = text.replace("\\","\\\\")
@@ -405,10 +409,6 @@ class Device:
 			
 		if len(word_storage) > 0:
 			self.device.input_text("%s".join(word_storage))
-
-
-			
-
 
 
 	####################
@@ -535,11 +535,12 @@ class Device:
 	#####################
 
 	def GetCurrentFocus(self):
-		result = self.device.shell("dumpsys window windows | grep -E 'mCurrentFocus|mFocusedApp|topApp'")
-		result = result.split('}')[0].split(' ')
-		for i in result:
-			if '/' in i:
-				return i
+		
+		result = self.device.shell("dumpsys window windows")
+		result = re.findall('com.instagram.*/',result)[0]
+		result = result.replace('/','')
+
+		return result
 
 	#############################
 	# CHECK INTERNET CONENCTION #####################
@@ -704,7 +705,7 @@ class Device:
 			back
 			home
 			menu
-
+			enter
 
 		"""
 
@@ -714,11 +715,20 @@ class Device:
 			self.device.input_keyevent('3')
 		elif action == 'menu':
 			self.device.input_keyevent('82')
+		elif action == 'enter':
+			self.device.input_keyevent('66')
+
+	####################
+	# DELETE APP DATA #####################
+	####################
+
+	def DeleteAppData(self):
+		self.device.shell(f"pm clear {self.mainapp_name}")
+		return True
 
 
 if __name__ == "__main__":
 	pass
-
 
 
 	# def GetData(**kwargs):
@@ -747,10 +757,7 @@ if __name__ == "__main__":
 
 	# 	return data
 
-
 	ig = Device('MNV9K19314903315')
 	ig.GetData()
 	# print(ig.GetCurrentFocus())
-
-
 

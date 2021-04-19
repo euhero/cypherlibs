@@ -10,7 +10,7 @@ class FileDataManager():
 				pass
 	
 	def write(self,data):
-		with open(f'{self.location}','w') as filedata:
+		with open(f'{self.location}','w' ,encoding="utf-8") as filedata:
 			filedata.write(str(data))
 		return True
 	
@@ -22,6 +22,15 @@ class FileDataManager():
 		if unique is True:
 			if data in self.read():
 				return True
-		with open(f'{self.location}','a') as filedata:
+		with open(f'{self.location}','a', encoding="utf-8") as filedata:
 			filedata.writelines(str(data)+'\n')
+		return True
+
+	def delete_line(self,data):
+		current_records = self.read()
+
+		current_records.remove(data)
+		self.write('')
+		[self.append(record) for record in current_records]
+
 		return True

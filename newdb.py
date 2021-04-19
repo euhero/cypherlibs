@@ -86,6 +86,9 @@ class MyDb:
 
 	def Update(self,query,update):
 		qresult = self.Query().filter_by(**query).first()
+		if qresult is None:
+			self.SaveSession()
+			return False
 		for keys in update.keys():
 			setattr(qresult,keys,update[keys])
 		self.SaveSession()

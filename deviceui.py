@@ -421,6 +421,7 @@ class Device:
 		finish_message = lambda x : self.Printhis(f'{x}', 'vanishgreen')
 		if data is None:
 			data = self.GetData(check=False)
+		
 		loading_animation = lambda x : 4 if x % 4 == 0 else 3 if x % 3 == 0 else 2 if x % 2 == 0 else 1
 		while True:
 			self.Printhis(f"{message}" + '.' * loading_animation(pagecheckererror + 1),'vanish')

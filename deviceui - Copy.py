@@ -31,22 +31,20 @@ class Device:
 		self.mainapp_name = self.app.split('/')[0]
 
 		client = AdbClient(host="127.0.0.1", port=5037)
-		self.device = client.device(deviceid.replace('-',':'))
-		# self.deviceid = deviceid
+		self.device = client.device(deviceid)
+		self.deviceid = deviceid
 
 		# self.GetData = self.MainGetData
 
-		if not os.path.isdir(deviceid.replace(':','-')):
-			os.mkdir(deviceid.replace(':','-'))
+		if not os.path.isdir(deviceid):
+			os.mkdir(deviceid)
 
 		self.Pt = Pt
 		self.GetDataFilter = None
 
-		if deviceid.replace('-',':') not in subprocess.getoutput('adb devices'):
+		if deviceid not in subprocess.getoutput('adb devices'):
 			self.Printhis(f'Device ID is not plugged in : {deviceid}','red')
 			sys.exit(0)
-
-		self.deviceid = str(deviceid).replace(':','-')
 
 	def Printhis(self,message,color='default',**kwargs):
 		if self.Pt is not None:

@@ -23,7 +23,7 @@ class Printhis:
 			    vanishgreen
 		"""
 
-		message = f'{message}' + ' ' * 20
+		message = f'{message}' + ' ' * 17
 
 		if color == 'default':
 			print(Fore.WHITE+ '[' + datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S") + ']\t: ' + message)

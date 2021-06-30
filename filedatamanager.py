@@ -27,10 +27,13 @@ class FileDataManager():
 		return True
 
 	def delete_line(self,data):
-		current_records = self.read()
 
-		current_records.remove(data)
-		self.write('')
-		[self.append(record) for record in current_records]
+		try:
+			current_records = self.read()
+			current_records.remove(data)
+			self.write('')
+			[self.append(record) for record in current_records]
+		except:
+			pass
 
 		return True

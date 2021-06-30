@@ -194,16 +194,34 @@ class Device:
 			time.sleep(sleep)
 
 		if resourceid != 'None':
-			x = BeautifulSoup(data,"html.parser").find(attrs={"resource-id":re.compile(f'^{self.mainapp_name}:id/{resourceid}$',re.I),"text":re.compile(f'^{id}$',re.I)})['bounds'].strip('[').strip(']').replace('][',',').split(',')
-			minx, miny, maxx, maxy = x
 
-			minx = int(minx) + margin[0]
-			miny = int(miny) + margin[1]
-			maxx = int(maxx) - margin[2]
-			maxy = int(maxy) - margin[3]
+			if check == True:
+				try:
+					x = BeautifulSoup(data,"html.parser").find(attrs={"resource-id":re.compile(f'^{self.mainapp_name}:id/{resourceid}$',re.I),"text":re.compile(f'^{id}$',re.I)})['bounds'].strip('[').strip(']').replace('][',',').split(',')
+					minx, miny, maxx, maxy = x
 
-			self.device.input_tap(randint(int(minx) , int(maxx)), randint(int(miny), int(maxy)))
-			return True
+					minx = int(minx) + margin[0]
+					miny = int(miny) + margin[1]
+					maxx = int(maxx) - margin[2]
+					maxy = int(maxy) - margin[3]
+
+					if checkandclick is True:
+						self.device.input_tap(randint(int(minx) , int(maxx)), randint(int(miny), int(maxy)))
+					return True
+				except TypeError:
+					return False
+
+			else:
+				x = BeautifulSoup(data,"html.parser").find(attrs={"resource-id":re.compile(f'^{self.mainapp_name}:id/{resourceid}$',re.I),"text":re.compile(f'^{id}$',re.I)})['bounds'].strip('[').strip(']').replace('][',',').split(',')
+				minx, miny, maxx, maxy = x
+
+				minx = int(minx) + margin[0]
+				miny = int(miny) + margin[1]
+				maxx = int(maxx) - margin[2]
+				maxy = int(maxy) - margin[3]
+
+				self.device.input_tap(randint(int(minx) , int(maxx)), randint(int(miny), int(maxy)))
+				return True
 
 		if check == True:
 			try:
